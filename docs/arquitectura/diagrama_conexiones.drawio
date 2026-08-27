@@ -1,0 +1,103 @@
+<mxfile host="65bd71144e">
+    <diagram name="Diagrama de conexiones - IOT-A909C5AD6F" id="diagrama-conexiones-iot">
+        <mxGraphModel dx="519" dy="485" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="700" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="titulo" value="Diagrama de conexiones - Proyecto IOT-A909C5AD6F" style="text;html=1;fontSize=18;fontStyle=1;align=center;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="10" width="960" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="esp32" value="ESP32 DevKit v1&#xa;wokwi-esp32-devkit-v1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;arcSize=8;verticalAlign=middle;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="420" y="260" width="220" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="mq2" value="Sensor MQ2 (analogico)&#xa;wokwi-gas-sensor" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;arcSize=10;verticalAlign=middle;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="70" width="200" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="buzzer" value="Buzzer piezoelectrico&#xa;wokwi-buzzer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=13;fontStyle=1;arcSize=10;verticalAlign=middle;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="820" y="90" width="200" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="oled" value="OLED SSD1306 (I2C)&#xa;board-ssd1306" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=13;fontStyle=1;arcSize=10;verticalAlign=middle;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="820" y="440" width="200" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="c_mq2_vcc" value="5V → VCC&#xa;(alimentacion)" style="html=1;strokeColor=#FF0000;strokeWidth=2;fontColor=#FF0000;fontSize=11;endArrow=block;exitX=0.15;exitY=0;exitDx=0;exitDy=0;entryX=0.7;entryY=1;entryDx=0;entryDy=0;" parent="1" source="esp32" target="mq2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c_mq2_gnd" value="GND → GND&#xa;(tierra)" style="html=1;strokeColor=#000000;strokeWidth=2;fontColor=#000000;fontSize=11;endArrow=block;exitX=0.35;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="esp32" target="mq2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c_mq2_aout" value="GPIO34 (ADC1_CH6) → AOUT&#xa;(entrada analogica)" style="html=1;strokeColor=#00A000;strokeWidth=2;fontColor=#00A000;fontSize=11;endArrow=block;exitX=0.55;exitY=0;exitDx=0;exitDy=0;entryX=0.3;entryY=1;entryDx=0;entryDy=0;" parent="1" source="esp32" target="mq2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c_bz_pos" value="GPIO25 → + (positivo)&#xa;(salida digital)" style="html=1;strokeColor=#00A000;strokeWidth=2;fontColor=#00A000;fontSize=11;endArrow=block;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0.2;entryY=1;entryDx=0;entryDy=0;" parent="1" source="esp32" target="buzzer" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c_bz_gnd" value="− (negativo) → GND&#xa;(tierra)" style="html=1;strokeColor=#000000;strokeWidth=2;fontColor=#000000;fontSize=11;endArrow=block;exitX=0.8;exitY=1;exitDx=0;exitDy=0;entryX=0.6;entryY=1;entryDx=0;entryDy=0;" parent="1" source="buzzer" target="esp32" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c_oled_vcc" value="3V3 → VCC&#xa;(alimentacion)" style="html=1;strokeColor=#FF0000;strokeWidth=2;fontColor=#FF0000;fontSize=11;endArrow=block;exitX=1;exitY=0.7;exitDx=0;exitDy=0;entryX=0.2;entryY=0;entryDx=0;entryDy=0;" parent="1" source="esp32" target="oled" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c_oled_gnd" value="GND → GND&#xa;(tierra)" style="html=1;strokeColor=#000000;strokeWidth=2;fontColor=#000000;fontSize=11;endArrow=block;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=0.4;entryY=0;entryDx=0;entryDy=0;" parent="1" source="esp32" target="oled" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c_oled_sda" value="GPIO21 → SDA&#xa;(I2C datos)" style="html=1;strokeColor=#0066CC;strokeWidth=2;fontColor=#0066CC;fontSize=11;endArrow=block;exitX=0.9;exitY=1;exitDx=0;exitDy=0;entryX=0.6;entryY=0;entryDx=0;entryDy=0;" parent="1" source="esp32" target="oled" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="c_oled_scl" value="GPIO22 → SCL&#xa;(I2C reloj)" style="html=1;strokeColor=#CC9900;strokeWidth=2;fontColor=#CC9900;fontSize=11;endArrow=block;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=0.8;entryY=0;entryDx=0;entryDy=0;" parent="1" source="esp32" target="oled" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="leyenda_titulo" value="Leyenda (colores de cableado)" style="text;html=1;fontSize=13;fontStyle=1;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="500" width="260" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="ley_rojo_linea" style="endArrow=none;html=1;strokeWidth=3;strokeColor=#FF0000;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="60" y="535" as="sourcePoint"/>
+                        <mxPoint x="110" y="535" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ley_rojo_texto" value="Alimentacion (5V / 3V3)" style="text;html=1;fontSize=12;align=left;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="120" y="525" width="220" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="ley_negro_linea" style="endArrow=none;html=1;strokeWidth=3;strokeColor=#000000;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="60" y="565" as="sourcePoint"/>
+                        <mxPoint x="110" y="565" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ley_negro_texto" value="Tierra (GND)" style="text;html=1;fontSize=12;align=left;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="120" y="555" width="220" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="ley_verde_linea" style="endArrow=none;html=1;strokeWidth=3;strokeColor=#00A000;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="60" y="595" as="sourcePoint"/>
+                        <mxPoint x="110" y="595" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ley_verde_texto" value="Senal digital / analogica (GPIO)" style="text;html=1;fontSize=12;align=left;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="120" y="585" width="260" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="ley_azul_linea" style="endArrow=none;html=1;strokeWidth=3;strokeColor=#0066CC;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="60" y="625" as="sourcePoint"/>
+                        <mxPoint x="110" y="625" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ley_azul_texto" value="I2C - SDA (datos)" style="text;html=1;fontSize=12;align=left;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="120" y="615" width="220" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="ley_amarillo_linea" style="endArrow=none;html=1;strokeWidth=3;strokeColor=#CC9900;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="60" y="655" as="sourcePoint"/>
+                        <mxPoint x="110" y="655" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ley_amarillo_texto" value="I2C - SCL (reloj)" style="text;html=1;fontSize=12;align=left;verticalAlign=middle;" parent="1" vertex="1">
+                    <mxGeometry x="120" y="645" width="220" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="nota" value="&amp;nbsp;los tres pines GND del ESP32 hacia MQ2, Buzzer y OLED son tierra ; los dibujo por separado solo para tener mejor claridad visual" style="text;html=1;fontSize=11;fontStyle=2;align=left;verticalAlign=top;whiteSpace=wrap;" parent="1" vertex="1">
+                    <mxGeometry x="420" y="565" width="600" height="60" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "author": "Mike - Tecnologia en Desarrollo de Software (IU Digital de Antioquia)",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-esp32-devkit-v1", "id": "esp", "top": 100.7, "left": 4.6, "attrs": {} },
+    { "type": "wokwi-gas-sensor", "id": "mq2", "top": -179.7, "left": 35.8, "attrs": {} },
+    { "type": "board-ssd1306", "id": "oled1", "top": -92.86, "left": 297.83, "attrs": {} },
+    {
+      "type": "wokwi-buzzer",
+      "id": "bz1",
+      "top": 261.6,
+      "left": 462.6,
+      "attrs": { "volume": "1" }
+    }
+  ],
+  "connections": [
+    [ "esp:5V", "mq2:VCC", "red", [ "v20" ] ],
+    [ "esp:GND.1", "mq2:GND", "black", [ "v40" ] ],
+    [ "esp:D34", "mq2:AOUT", "green", [ "v60" ] ],
+    [ "esp:3V3", "oled1:VCC", "red", [ "v-20", "h480", "v-260" ] ],
+    [ "esp:GND.2", "oled1:GND", "black", [ "v0", "h500", "v-260" ] ],
+    [ "esp:D21", "oled1:SDA", "blue", [ "v20", "h520", "v-260" ] ],
+    [ "esp:D22", "oled1:SCL", "yellow", [ "v40", "h540", "v-260" ] ],
+    [ "esp:D25", "bz1:1", "green", [ "v160", "h440" ] ],
+    [ "bz1:2", "esp:GND.3", "black", [ "v220", "h420" ] ]
+  ],
+  "dependencies": {}
+}
