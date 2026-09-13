@@ -1,5 +1,6 @@
 # Ficha de insumos individuales — Actividad 1 
 
+// Van incluidos los de la ACT 1
 
 ## 1.1. Datos del escenario
 

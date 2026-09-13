@@ -12,6 +12,13 @@
       "top": 261.6,
       "left": 462.6,
       "attrs": { "volume": "1" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_wifi",
+      "top": 100,
+      "left": 400,
+      "attrs": { "color": "blue" }
     }
   ],
   "connections": [
@@ -23,7 +30,9 @@
     [ "esp:D21", "oled1:SDA", "blue", [ "v20", "h520", "v-260" ] ],
     [ "esp:D22", "oled1:SCL", "yellow", [ "v40", "h540", "v-260" ] ],
     [ "esp:D25", "bz1:1", "green", [ "v160", "h440" ] ],
-    [ "bz1:2", "esp:GND.3", "black", [ "v220", "h420" ] ]
+    [ "bz1:2", "esp:GND.3", "black", [ "v220", "h420" ] ],
+    [ "esp:D27", "led_wifi:A", "blue", [ "v20", "h200" ] ],
+    [ "led_wifi:C", "esp:GND.4", "black", [ "v40", "h200" ] ]
   ],
   "dependencies": {}
 }

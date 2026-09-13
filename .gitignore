@@ -1,4 +1,19 @@
+# PlatformIO
 .pio/
-.vscode/
 build/
+
+# VS Code
+.vscode/
+
+# Archivos de compilación
 *.o
+*.elf
+*.bin
+*.map
+
+# Credenciales (IMPORTANTE: no subir secrets.h real)
+include/secrets.h
+
+# Archivos temporales
+*~
+.DS_Store
