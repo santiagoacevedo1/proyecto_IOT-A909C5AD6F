@@ -45,21 +45,25 @@ static const char *UNIDAD_VARIABLE = "ADC";
 
 
 static const unsigned long WIFI_REINTENTO_MS = 10000;
-static const unsigned long MQTT_REINTENTO_MS = 5000;
+static const unsigned long MQTT_REINTENTO_MS = 15000;
 static const unsigned long LED_PARPADEO_RAPIDO_MS = 100;
 static const unsigned long LED_PARPADEO_LENTO_MS = 1000;
+
+// Telemetría periódica: 12 segundos
+static const unsigned long TELEMETRIA_PERIODICA_MS = 12000;
 
 // aca logica de la maquina de estados
 
 enum ModoSistema {
   MODO_SEGURO,      
   MODO_AUTO,        
-  MODO_MANUAL       
+  MODO_ARMADO       
 };
 
 enum EstadoAlarma {
   ALARMA_INACTIVA,
-  ALARMA_ACTIVA
+  ALARMA_ACTIVA,
+  ALARMA_SILENCIADA
 };
 
 ModoSistema modoActual = MODO_SEGURO;
@@ -69,12 +73,15 @@ EstadoAlarma estadoAlarma = ALARMA_INACTIVA;
 uint8_t lecturasEnRiesgoConsecutivas = 0;
 int ultimaLecturaValida = 0;
 bool ultimaLecturaEsValida = false;
+uint32_t sequenceNumber = 0;
+bool alarmaRecienConfirmada = false;
 
 // Timing  del proceso que no es bloqueante
 unsigned long ultimoMuestreo = 0;
 unsigned long ultimoIntentoWiFi = 0;
 unsigned long ultimoIntentoMQTT = 0;
 unsigned long ultimoParpadeoLED = 0;
+unsigned long ultimaTelemetriaPeriodica = 0;
 
 // WiFi/MQTT
 WiFiClient espClient;
@@ -178,7 +185,8 @@ void oledImprimirLinea(const char* texto);
 void actualizarInterfazOLED();
 
 // Comunicación
-void publicarTelemetriaMQTT();
+void publicarTelemetriaPeriodica();
+void publicarAlertaInmediata();
 void publicarSerial();
 void callbackMQTT(char* topic, byte* payload, unsigned int length);
 void procesarComando(const char* comando);
@@ -242,6 +250,12 @@ void loopPrincipal() {
     ultimoMuestreo = ahora;
   }
 
+  // Telemetría periódica cada 12 segundos
+  if (ahora - ultimaTelemetriaPeriodica >= TELEMETRIA_PERIODICA_MS) {
+    publicarTelemetriaPeriodica();
+    ultimaTelemetriaPeriodica = ahora;
+  }
+
  
   controlarBuzzer();
 
@@ -264,15 +278,16 @@ void gestionarMuestreo() {
   ultimaLecturaEsValida = valida;
 
   
-  if (modoActual == MODO_AUTO) {
+  if (modoActual == MODO_AUTO || modoActual == MODO_ARMADO) {
     actualizarLogicaAlarma(lectura, valida);
   }
 
-  // aca desarrollo de publicacion de telemetria
-  publicarTelemetriaMQTT();
+  // Alerta inmediata si se confirmó alarma
+  if (alarmaRecienConfirmada) {
+    publicarAlertaInmediata();
+    alarmaRecienConfirmada = false;
+  }
 
-//**************************************** */
-  // profe, ayuda acá por favor si ve un error, pora favor
   publicarSerial();
 }
 
@@ -280,21 +295,28 @@ void gestionarMuestreo() {
 void actualizarLogicaAlarma(int lectura, bool valida) {
   if (!valida) return;
 
+  bool eraAlarmaActiva = (estadoAlarma == ALARMA_ACTIVA);
+
   if (lectura >= UMBRAL_PRINCIPAL_ADC) {
     if (lecturasEnRiesgoConsecutivas < 255) {
       lecturasEnRiesgoConsecutivas++;
     }
     if (lecturasEnRiesgoConsecutivas >= LECTURAS_CONSECUTIVAS_CONFIRMACION) {
-      estadoAlarma = ALARMA_ACTIVA;
+      if (!eraAlarmaActiva && estadoAlarma != ALARMA_SILENCIADA) {
+        estadoAlarma = ALARMA_ACTIVA;
+        alarmaRecienConfirmada = true;
+      }
     }
   } else if (lectura <= UMBRAL_RETORNO_ADC) {
     lecturasEnRiesgoConsecutivas = 0;
-    estadoAlarma = ALARMA_INACTIVA;
+    if (estadoAlarma != ALARMA_SILENCIADA) {
+      estadoAlarma = ALARMA_INACTIVA;
+    }
   }
 }
 
 void controlarBuzzer() {
-  if (estadoAlarma == ALARMA_ACTIVA && modoActual == MODO_AUTO) {
+  if (estadoAlarma == ALARMA_ACTIVA && (modoActual == MODO_AUTO || modoActual == MODO_ARMADO)) {
     tone(PIN_BUZZER, FRECUENCIA_ALARMA_HZ);
   } else {
     noTone(PIN_BUZZER);
@@ -442,56 +464,79 @@ void procesarComando(const char* comando) {
 
   if (strcmp(cmd, "AUTO") == 0) {
     modoActual = MODO_AUTO;
-    Serial.println(F(">>> Modo: AUTO"));
-  } else if (strcmp(cmd, "MANUAL") == 0) {
-    modoActual = MODO_MANUAL;
     estadoAlarma = ALARMA_INACTIVA;
     lecturasEnRiesgoConsecutivas = 0;
-    Serial.println(F(">>> Modo: MANUAL (alarma desactivada)"));
-  } else if (strcmp(cmd, "RESET") == 0) {
-    aplicarEstadoSeguro();
-    modoActual = MODO_AUTO; // Volver a auto tras reset
-    Serial.println(F(">>> RESET: Estado seguro + modo AUTO"));
+    Serial.println(F(">>> Modo: AUTO (monitoreo activo)"));
+  } else if (strcmp(cmd, "ARMAR") == 0) {
+    modoActual = MODO_ARMADO;
+    Serial.println(F(">>> Modo: ARMADO (alarma habilitada)"));
+  } else if (strcmp(cmd, "SILENCIAR") == 0) {
+    if (estadoAlarma == ALARMA_ACTIVA) {
+      estadoAlarma = ALARMA_SILENCIADA;
+      Serial.println(F(">>> Alarma SILENCIADA (buzzer apagado, alarma latched)"));
+    } else {
+      Serial.println(F(">>> SILENCIAR: No hay alarma activa para silenciar"));
+    }
   } else {
-    Serial.print(F("Comando desconocido: ")); Serial.println(cmd);
+    Serial.print(F("COMANDO_DESCONOCIDO: ")); Serial.println(cmd);
   }
 }
 
 
 
-void publicarTelemetriaMQTT() {
+void publicarTelemetriaPeriodica() {
   if (!mqttConectado) return;
 
-  StaticJsonDocument<512> doc;
+  StaticJsonDocument<256> doc;
 
-  doc["proyecto"] = ID_PROYECTO;
-  doc["timestamp_ms"] = millisSeguro();
-
-  JsonObject sensor = doc.createNestedObject("sensor");
-  sensor["tipo"] = "MQ2";
-  sensor["nivel_gas"] = ultimaLecturaValida;
-  sensor["unidad"] = UNIDAD_VARIABLE;
-  sensor["valido"] = ultimaLecturaEsValida;
-
-  doc["estado"] = (estadoAlarma == ALARMA_ACTIVA) ? "ALARMA" : "SEGURO";
-
+  doc["device_id"] = ID_PROYECTO;
+  doc["variable"] = NOMBRE_VARIABLE;
+  doc["value"] = ultimaLecturaValida;
+  doc["unit"] = UNIDAD_VARIABLE;
+  
   const char* modoStr = (modoActual == MODO_AUTO) ? "AUTO" :
-                        (modoActual == MODO_MANUAL) ? "MANUAL" : "SEGURO";
-  doc["modo"] = modoStr;
+                        (modoActual == MODO_ARMADO) ? "ARMADO" : "SEGURO";
+  doc["mode"] = modoStr;
+  
+  bool alarmActive = (estadoAlarma == ALARMA_ACTIVA || estadoAlarma == ALARMA_SILENCIADA);
+  doc["alarm"] = alarmActive;
+  doc["sequence"] = sequenceNumber++;
 
-  JsonObject alarma = doc.createNestedObject("alarma");
-  alarma["confirmada"] = (estadoAlarma == ALARMA_ACTIVA);
-  alarma["lecturas_consecutivas"] = lecturasEnRiesgoConsecutivas;
-  alarma["umbral"] = UMBRAL_PRINCIPAL_ADC;
-  alarma["histeresis"] = MARGEN_RETORNO_ADC;
-
-  char buffer[512];
+  char buffer[256];
   size_t n = serializeJson(doc, buffer, sizeof(buffer));
 
   if (n > 0) {
     bool ok = mqttClient.publish(MQTT_TOPIC_TELEMETRIA, buffer, false);
     if (!ok) {
       Serial.println(F("MQTT publish falló"));
+    }
+  }
+}
+
+void publicarAlertaInmediata() {
+  if (!mqttConectado) return;
+
+  StaticJsonDocument<256> doc;
+
+  doc["device_id"] = ID_PROYECTO;
+  doc["variable"] = NOMBRE_VARIABLE;
+  doc["value"] = ultimaLecturaValida;
+  doc["unit"] = UNIDAD_VARIABLE;
+  
+  const char* modoStr = (modoActual == MODO_AUTO) ? "AUTO" :
+                        (modoActual == MODO_ARMADO) ? "ARMADO" : "SEGURO";
+  doc["mode"] = modoStr;
+  
+  doc["alarm"] = true;
+  doc["sequence"] = sequenceNumber++;
+
+  char buffer[256];
+  size_t n = serializeJson(doc, buffer, sizeof(buffer));
+
+  if (n > 0) {
+    bool ok = mqttClient.publish(MQTT_TOPIC_TELEMETRIA, buffer, true);
+    if (!ok) {
+      Serial.println(F("MQTT alert publish falló"));
     }
   }
 }
@@ -554,15 +599,15 @@ void gestionarComandosSerial() {
 
   Serial.print(F("Serial CMD: ")); Serial.println(linea);
 
-  if (linea == "AUTO" || linea == "MANUAL" || linea == "RESET" || linea == "STATUS") {
-   
+  if (linea == "AUTO" || linea == "ARMAR" || linea == "SILENCIAR" || linea == "STATUS") {
+    
     StaticJsonDocument<64> doc;
     doc["comando"] = linea;
     char buffer[64];
     serializeJson(doc, buffer);
     procesarComando(buffer);
   } else if (linea == "HELP" || linea == "?") {
-    Serial.println(F("Comandos: AUTO, MANUAL, RESET, STATUS, HELP"));
+    Serial.println(F("Comandos: AUTO, ARMAR, SILENCIAR, STATUS, HELP"));
   } else {
     Serial.println(F("Comando no reconocido. Use HELP"));
   }
@@ -576,12 +621,16 @@ void publicarSerial() {
   Serial.print(F(" | unit=")); Serial.print(UNIDAD_VARIABLE);
   Serial.print(F(" | valid=")); Serial.print(ultimaLecturaEsValida ? F("si") : F("no"));
   Serial.print(F(" | riesgo=")); Serial.print(lecturasEnRiesgoConsecutivas);
-  Serial.print(F(" | estado=")); Serial.print(estadoAlarma == ALARMA_ACTIVA ? F("ALARMA") : F("SEGURO"));
+  
+  const char* estadoStr = (estadoAlarma == ALARMA_ACTIVA) ? "ALARMA" :
+                          (estadoAlarma == ALARMA_SILENCIADA) ? "SILENCIADA" : "SEGURO";
+  Serial.print(F(" | estado=")); Serial.print(estadoStr);
+  
   Serial.print(F(" | modo="));
   switch (modoActual) {
     case MODO_SEGURO: Serial.print(F("SEGURO")); break;
     case MODO_AUTO: Serial.print(F("AUTO")); break;
-    case MODO_MANUAL: Serial.print(F("MANUAL")); break;
+    case MODO_ARMADO: Serial.print(F("ARMADO")); break;
   }
   Serial.print(F(" | wifi=")); Serial.print(wifiConectado ? F("OK") : F("NC"));
   Serial.print(F(" | mqtt=")); Serial.println(mqttConectado ? F("OK") : F("NC"));
@@ -748,7 +797,7 @@ void actualizarInterfazOLED() {
   
   char lineaModo[20];
   const char* modoStr = (modoActual == MODO_AUTO) ? "AUTO" :
-                        (modoActual == MODO_MANUAL) ? "MANUAL" : "SEGURO";
+                        (modoActual == MODO_ARMADO) ? "ARMADO" : "SEGURO";
   snprintf(lineaModo, sizeof(lineaModo), "MODO: %s", modoStr);
   oledSetCursor(0, 3);
   oledImprimirLinea(lineaModo);
@@ -757,8 +806,10 @@ void actualizarInterfazOLED() {
   oledSetCursor(0, 4);
   if (!ultimaLecturaEsValida) {
     oledImprimirLinea("-- DATO INVALIDO --");
-  } else if (estadoAlarma == ALARMA_ACTIVA && modoActual == MODO_AUTO) {
+  } else if (estadoAlarma == ALARMA_ACTIVA && (modoActual == MODO_AUTO || modoActual == MODO_ARMADO)) {
     oledImprimirLinea(">>> ALARMA! <<<");
+  } else if (estadoAlarma == ALARMA_SILENCIADA) {
+    oledImprimirLinea("ALARMA SILENCIADA");
   } else {
     oledImprimirLinea("SEGURO");
   }
